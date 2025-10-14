@@ -12,16 +12,19 @@ services:
       - db_data:/var/lib/postgresql/data
   api:
     build: .
-    depends_on:
-      - db
     environment:
-      DATABASE_URL: postgresql://aura:aura@db:5432/aura?schema=public
+      DATABASE_URL: "postgresql://neondb_owner:npg_6NjdfAhm0knZ@ep-winter-dew-a19zoq68-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
       JWT_SECRET: supersecret
+      AWS_ACCESS_KEY_ID: "AKIATNVEVDNY4N2666EW"
+      AWS_SECRET_ACCESS_KEY: "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"
+      AWS_REGION: "ap-southeast-2"
+      S3_BUCKET: "aura-store-bucket"
+      S3_PUBLIC_BASE_URL: "https://aura-store-bucket.s3.ap-southeast-2.amazonaws.com/"
       PORT: 4000
     ports:
       - "4000:4000"
     volumes:
       - .:/app
-    command: sh -c "npx prisma migrate deploy && npm run dev"
+    command: sh -c "npx prisma db push && npm run dev"
 volumes:
   db_data:
