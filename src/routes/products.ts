@@ -59,12 +59,30 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id);
+  console.log('DELETE request for product ID:', id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id' });
   try {
+    // Check if product exists first
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) {
+      console.log('Product not found:', id);
+      return res.status(404).json({ error: 'Not found' });
+    }
+    
+    // Check if product is used in any orders
+    const orderItems = await prisma.orderItem.findMany({ where: { productId: id } });
+    if (orderItems.length > 0) {
+      console.log('Product is used in orders, cannot delete');
+      return res.status(400).json({ error: 'Cannot delete product that is used in orders' });
+    }
+    
+    console.log('Deleting product:', product.name);
     await prisma.product.delete({ where: { id } });
+    console.log('Product deleted successfully');
     res.json({ ok: true });
-  } catch {
-    res.status(404).json({ error: 'Not found' });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 
