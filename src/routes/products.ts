@@ -8,13 +8,19 @@ const router = Router();
 const saveSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2).default(''),
+  detailedDescription: z.string().optional(),
   price: z.number().int().positive(),
-  category: z.string().min(1),
-  image: z.string().url().optional(),
   originalPrice: z.number().int().positive().optional(),
+  category: z.string().min(1),
   badge: z.string().optional(),
   rating: z.number().min(0).max(5).optional(),
-  reviews: z.number().int().min(0).optional(),
+  reviewCount: z.number().int().min(0).optional(),
+  material: z.string().optional(),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  warranty: z.string().optional(),
+  status: z.string().default('active'),
+  image: z.string().url().optional(),
   images: z.array(z.string().url()).optional(),
 });
 
