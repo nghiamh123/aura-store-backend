@@ -103,3 +103,24 @@ model OrderItem {
   quantity  Int
   price     Int
 }
+
+// Blog
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Post {
+  id          Int         @id @default(autoincrement())
+  title       String
+  slug        String      @unique
+  excerpt     String
+  content     String
+  coverImage  String?
+  images      String[]
+  tags        String[]
+  status      PostStatus  @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}

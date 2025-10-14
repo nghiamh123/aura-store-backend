@@ -8,6 +8,7 @@ import orderRoutes from './routes/orders';
 import cartRoutes from './routes/cart';
 import wishlistRoutes from './routes/wishlist';
 import uploadRoutes from './routes/uploads';
+import postRoutes from './routes/posts';
 
 dotenv.config();
 const app = express();
@@ -26,6 +27,7 @@ app.use('/orders', orderRoutes);
 app.use('/cart', cartRoutes);
 app.use('/wishlist', wishlistRoutes);
 app.use('/uploads', uploadRoutes);
+app.use('/posts', postRoutes);
 
 // Basic error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
