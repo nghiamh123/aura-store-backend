@@ -12,6 +12,16 @@ model User {
   email     String     @unique
   password  String
   name      String
+  phone     String?
+  avatar    String?
+  gender    Gender?
+  dateOfBirth DateTime?
+  address   String?
+  ward      String?
+  district  String?
+  city      String?
+  country   String?
+  postalCode String?
   role      Role       @default(CUSTOMER)
   cartItems CartItem[]
   wishlist  Wishlist?
@@ -23,6 +33,12 @@ model User {
 enum Role {
   ADMIN
   CUSTOMER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 model Product {
@@ -77,13 +93,23 @@ model WishlistItem {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  user      User        @relation(fields: [userId], references: [id])
-  userId    String
-  items     OrderItem[]
-  total     Int
-  status    OrderStatus @default(CONFIRMED)
-  createdAt DateTime    @default(now())
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique @default(cuid())
+  user            User        @relation(fields: [userId], references: [id])
+  userId          String
+  items           OrderItem[]
+  total           Int
+  status          OrderStatus @default(CONFIRMED)
+  trackingNumber  String?
+  shippingAddress String?
+  customerInfo    Json?
+  shippingInfo    Json?
+  paymentMethod   String?
+  shippingFee     Int         @default(0)
+  discount        Int         @default(0)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 enum OrderStatus {
