@@ -64,7 +64,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         size: item.product.size,
         color: item.product.color,
         warranty: item.product.warranty,
-        addedAt: item.createdAt
+        addedAt: item.product.createdAt
       }))
     });
   } catch (error) {
