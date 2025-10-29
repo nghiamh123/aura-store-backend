@@ -1,14 +1,36 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 const router = Router();
 
-function getUserId(q: any) { return (q.userId as string) || 'guest-user'; }
-
-router.get('/', async (req, res) => {
+/**
+ * Middleware để lấy userId từ JWT cookie
+ * Yêu cầu user phải đăng nhập
+ */
+function requireAuth(req: any, res: any, next: any) {
   try {
-    const userId = getUserId(req.query);
+    const token = req.cookies?.customerAuth || '';
+    if (!token) {
+      return res.status(401).json({ error: 'Chưa đăng nhập. Vui lòng đăng nhập để sử dụng wishlist.' });
+    }
+    
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { sub: string };
+    req.userId = payload.sub;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' });
+  }
+}
+
+/**
+ * GET /wishlist
+ * Lấy wishlist của user đã đăng nhập
+ */
+router.get('/', requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.userId;
     
     // Get or create wishlist for user
     let wishlist = await prisma.wishlist.findUnique({
@@ -17,19 +39,7 @@ router.get('/', async (req, res) => {
     });
     
     if (!wishlist) {
-      // Create guest user if not exists
-      let user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user && userId === 'guest-user') {
-        user = await prisma.user.create({
-          data: {
-            id: 'guest-user',
-            email: 'guest@aura.com',
-            name: 'Guest User',
-            password: 'guest-password',
-          }
-        });
-      }
-      
+      // Tạo wishlist mới cho user nếu chưa có
       wishlist = await prisma.wishlist.create({
         data: { userId },
         include: { items: { include: { product: true } } }
@@ -45,6 +55,7 @@ router.get('/', async (req, res) => {
         price: item.product.price,
         originalPrice: item.product.originalPrice,
         image: item.product.image,
+        images: item.product.images,
         category: item.product.category,
         badge: item.product.badge,
         rating: item.product.rating,
@@ -62,9 +73,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+/**
+ * POST /wishlist
+ * Thêm sản phẩm vào wishlist của user đã đăng nhập
+ */
+router.post('/', requireAuth, async (req: any, res) => {
   try {
-    const userId = getUserId(req.query);
+    const userId = req.userId;
     const { productId } = req.body as { productId: number };
     
     if (!productId) return res.status(400).json({ error: 'productId required' });
@@ -72,19 +87,6 @@ router.post('/', async (req, res) => {
     // Get or create wishlist
     let wishlist = await prisma.wishlist.findUnique({ where: { userId } });
     if (!wishlist) {
-      // Create guest user if not exists
-      let user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user && userId === 'guest-user') {
-        user = await prisma.user.create({
-          data: {
-            id: 'guest-user',
-            email: 'guest@aura.com',
-            name: 'Guest User',
-            password: 'guest-password',
-          }
-        });
-      }
-      
       wishlist = await prisma.wishlist.create({ data: { userId } });
     }
     
@@ -109,9 +111,13 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/', async (req, res) => {
+/**
+ * DELETE /wishlist
+ * Xóa sản phẩm khỏi wishlist của user đã đăng nhập
+ */
+router.delete('/', requireAuth, async (req: any, res) => {
   try {
-    const userId = getUserId(req.query);
+    const userId = req.userId;
     const productId = Number(req.query.productId);
     
     if (!productId) return res.status(400).json({ error: 'productId required' });
@@ -129,6 +135,30 @@ router.delete('/', async (req, res) => {
   } catch (error) {
     console.error('Error removing from wishlist:', error);
     res.status(500).json({ error: 'Failed to remove from wishlist' });
+  }
+});
+
+/**
+ * DELETE /wishlist/clear
+ * Xóa tất cả sản phẩm khỏi wishlist của user đã đăng nhập
+ */
+router.delete('/clear', requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.userId;
+    
+    const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
+    if (!wishlist) {
+      return res.status(404).json({ error: 'Wishlist not found' });
+    }
+    
+    await prisma.wishlistItem.deleteMany({
+      where: { wishlistId: wishlist.id }
+    });
+    
+    res.json({ message: 'Wishlist cleared' });
+  } catch (error) {
+    console.error('Error clearing wishlist:', error);
+    res.status(500).json({ error: 'Failed to clear wishlist' });
   }
 });
 
