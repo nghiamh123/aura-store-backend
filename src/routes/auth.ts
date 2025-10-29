@@ -57,10 +57,11 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
     res.cookie('customerAuth', token, {
       httpOnly: true,
-      sameSite: 'lax',
+      // Cross-site requests (frontend on different origin) need SameSite=None + Secure
+      sameSite: 'none',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/'
+      path: '/',
     });
 
     return res.status(201).json({ user: {
@@ -91,10 +92,10 @@ router.post('/customer/login', async (req, res) => {
     const token = jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
     res.cookie('customerAuth', token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/'
+      path: '/',
     });
 
     return res.json({ user: { id: user.id, name: user.name, email: user.email,
